@@ -1,0 +1,68 @@
+# dictmentor
+
+A python utility framework to augment dictionaries
+
+!TOC
+
+## Installation
+
+Installation is straightforward via pip:
+
+```bash
+pip install dictmentor
+```
+
+## Getting started
+
+Using `dictmentor` is simple. Just create an instance of `DictMentor` and bind some extensions to it. The extensions
+do the hard work augmenting the dictionary. `DictMentor` does not have any extensions that are enabled by default. This
+is because some extensions need some additional arguments passed that control their behaviour. If you bind no extensions
+on your own and augment a dictionary, it will actually do nothing and return the dictionary as it is.
+
+Example usage
+
+!INCLUDECODE "examples/getting_started/run.py" (python)
+
+For a list of provided extensions please see the chapter Extensions. You can easily write your own extensions as well.
+Please see existing extensions for a how-to.
+
+
+## Extensions
+
+### Environment
+
+Augment the given dictionary by resolving environment variables on the fly
+
+Example
+
+!INCLUDECODE "examples/Environment/run.py" (python)
+
+### ExternalResource
+
+Augment the given dictionary by resolving files on disk (whether absolute or relative) and integrating their content.
+If the path to the file is specified in a relative manner you should pass a `base_path` to the `ExternalResource`
+instance when instantiating it. Otherwise the current working directory will be assumed.
+
+Example
+
+!INCLUDECODE "examples/ExternalResource/all.sql" (sql)
+
+!INCLUDECODE "examples/ExternalResource/single.sql" (sql)
+
+!INCLUDECODE "examples/ExternalResource/run.py" (python)
+
+### ExternalYamlResource
+
+Augment the given dictionary by resolving by yaml file on disk (whether absolute or relative) and integrating
+its content (as a dictionary) as the current node. The yaml's contents will be augmented as well.
+
+If the path to the file is specified in a relative manner you should pass a `base_path` to the `ExternalYamlResource`
+instance when instantiating it. Otherwise the current working directory will be assumed.
+
+Example
+
+!INCLUDECODE "examples/ExternalYamlResource/inner.yaml" (yaml)
+
+!INCLUDECODE "examples/ExternalYamlResource/item3.yaml" (yaml)
+
+!INCLUDECODE "examples/ExternalYamlResource/run.py" (python)

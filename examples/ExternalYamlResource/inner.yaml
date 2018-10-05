@@ -1,0 +1,5 @@
+# Contents of inner.yaml
+inner:
+  item1:
+  item2:
+  external: item3.yaml

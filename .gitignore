@@ -102,3 +102,10 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# IntelliJ stuff
+.idea/
+*.iml
+
+# Other
+.DS_Store

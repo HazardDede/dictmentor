@@ -1,0 +1,7 @@
+# Contents of item3.yaml
+item2:
+  price: 50  # You may also update nodes from the parent node
+item3:
+  price: 100
+  count: 5
+  sold: 200
