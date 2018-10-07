@@ -9,12 +9,13 @@ def dict_find_pattern(dic, pattern, search_in_keys=True, search_in_values=True):
     """
     Find keys and values in a (nested) dictionary with regular expression pattern.
     Examples:
-        >>> d = dict(
-        ...     foo='bar',
-        ...     bar='baz',
-        ...     nested=dict(p1=1, p2=2),
-        ...     lst=['bar', 'foo', dict(p3=3, p4=4)]
-        ... )
+        >>> from collections import OrderedDict
+        >>> d = OrderedDict((
+        ...     ('foo', 'bar'),
+        ...     ('bar', 'baz'),
+        ...     ('nested', dict(p1=1, p2=2)),
+        ...     ('lst', ['bar', 'foo', dict(p3=3, p4=4)])
+        ... ))
         >>> f = dict_find_pattern(d, '.*a.*', search_in_keys=True, search_in_values=False)
         >>> def print_findings(f):
         ...     for _, key, value in f:
