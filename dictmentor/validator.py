@@ -89,8 +89,9 @@ class Validator(object):
             Traceback (most recent call last):
                 ...
             ValueError: 'my_str2' (int) is not an instance of type 'str'
-            >>> Validator.instance_of(my_str='str', my_str2='str2', non_str=5, target_type=str, summary=False)
-            {'my_str': True, 'my_str2': True, 'non_str': False}
+            >>> (Validator.instance_of(my_str='str', my_str2='str2', non_str=5, target_type=str, summary=False)
+            ... == {'my_str': True, 'my_str2': True, 'non_str': False})
+            True
 
         Args:
             raise_ex (bool, optional): If set to ``True`` an exception is raised if at least one item is
@@ -147,8 +148,9 @@ class Validator(object):
             False
             >>> Validator.is_stream(stream=MyStream(), nonstream='abc', summary=True)
             False
-            >>> Validator.is_stream(stream=MyStream(), nonstream='abc', summary=False)
-            {'stream': True, 'nonstream': False}
+            >>> (Validator.is_stream(stream=MyStream(), nonstream='abc', summary=False)
+            ... == {'stream': True, 'nonstream': False})
+            True
             >>> Validator.is_stream(nonstream='abc', raise_ex=True)
             Traceback (most recent call last):
                 ...
