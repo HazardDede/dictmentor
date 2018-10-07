@@ -204,8 +204,9 @@ class Validator(object):
             False
             >>> Validator.is_file(file=tmp.name, nonfile="iamsurethatthisdontexist")
             False
-            >>> Validator.is_file(file=tmp.name, nonfile="iamsurethatthisdontexist", summary=False)
-            {'file': True, 'nonfile': False}
+            >>> (Validator.is_file(file=tmp.name, nonfile="iamsurethatthisdontexist", summary=False)
+            ... == {'file': True, 'nonfile': False})
+            True
             >>> Validator.is_file(file=tmp.name, nonfile="iamsurethatthisdontexist", raise_ex=True)
             Traceback (most recent call last):
                 ...

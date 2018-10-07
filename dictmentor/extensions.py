@@ -83,8 +83,9 @@ class ExternalResource(Extension):
         ...     print('SELECT *', file=fp); print('FROM my_table', file=fp); print("WHERE 1 = 1", file=fp)
         >>> current = '{"a": 1, "b": 2, "sql": "{{external::%s}}"}' % tmp.name
         >>> from dictmentor import DictMentor
-        >>> DictMentor().bind(ExternalResource()).load_yaml(current)
-        {'a': 1, 'b': 2, 'sql': 'SELECT *\\nFROM my_table\\nWHERE 1 = 1\\n'}
+        >>> (DictMentor().bind(ExternalResource()).load_yaml(current)
+        ... == {'a': 1, 'b': 2, 'sql': 'SELECT *\\nFROM my_table\\nWHERE 1 = 1\\n'})
+        True
     """
     __pattern__ = '.*({{external::(.*)}}).*'
 
@@ -164,8 +165,8 @@ class ExternalYamlResource(ExternalResource):
         ...     print('{"b": 99, "c": 3}', file=fp)
         >>> current = '{"a": 1, "b": 2, "external": "%s"}' % tmp.name
         >>> from dictmentor import DictMentor
-        >>> res = DictMentor().bind(ExternalYamlResource()).load_yaml(current)
-        >>> eval("{'a': 1, 'b': 99, 'c': 3}") == res
+        >>> (DictMentor().bind(ExternalYamlResource()).load_yaml(current)
+        ... == {'a': 1, 'b': 99, 'c': 3})
         True
     """
     __pattern__ = r'^\s*external\s*$'
@@ -216,13 +217,14 @@ class Environment(Extension):
         >>> from dictmentor.utils import modified_environ
         >>> jstr = '{"a": 1, "file_path": "my_file.{{env::ENVIRONMENT}}.cfg"}'
         >>> with modified_environ(ENVIRONMENT='production'):
-        ...     DictMentor().bind(Environment()).load_yaml(jstr)
-        {'a': 1, 'file_path': 'my_file.production.cfg'}
+        ...     DictMentor().bind(Environment()).load_yaml(jstr) == {'a': 1, 'file_path': 'my_file.production.cfg'}
+        True
         >>> # If an environment variable is not set, a default is rendered instead. You can specify the default
         >>> # via an init argument. Default of the default is 'none' ...
         >>> with modified_environ('ENVIRONMENT'):
-        ...     DictMentor().bind(Environment(default='development')).load_yaml(jstr)
-        {'a': 1, 'file_path': 'my_file.development.cfg'}
+        ...     (DictMentor().bind(Environment(default='development')).load_yaml(jstr)
+        ...     == {'a': 1, 'file_path': 'my_file.development.cfg'})
+        True
         >>> # ... or by specifying fail_on_unset an exception will be raised
         >>> with modified_environ('ENVIRONMENT'):
         ...     res = DictMentor().bind(
