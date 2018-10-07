@@ -30,7 +30,8 @@ class Extension(object):
         Examples:
             >>> # Looks for the given pattern in key strings only
             >>> cfg = dict(pattern='external.*', search_in_keys=True, search_in_values=False)
-            >>> dic = dict(a='a', external12='abc', b=dict(c='c', external56='cde'))
+            >>> from collections import OrderedDict
+            >>> dic = OrderedDict((('a', 'a'), ('external12', 'abc'), ('b', dict(c='c', external56='cde'))))
             >>> from dictmentor.utils import dict_find_pattern
             >>> for _, key, value in dict_find_pattern(dic, **cfg):
             ...     print(key, value)
