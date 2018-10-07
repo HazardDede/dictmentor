@@ -1,5 +1,7 @@
 # dictmentor
 
+[![Build Status](https://travis-ci.org/HazardDede/dictmentor.svg?branch=master)](https://travis-ci.org/HazardDede/dictmentor)
+
 A python utility framework to augment dictionaries
 
 1\.  [Installation](#installation)  
