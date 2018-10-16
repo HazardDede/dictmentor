@@ -30,7 +30,7 @@ do the hard work augmenting the dictionary. `DictMentor` does not have any exten
 is because some extensions need some additional arguments passed that control their behaviour. If you bind no extensions
 on your own and augment a dictionary, it will actually do nothing and return the dictionary as it is.
 
-Example usage
+**Example usage:**
 
 ```python
 import os
