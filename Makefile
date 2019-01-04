@@ -1,6 +1,6 @@
 .PHONY: clean-pyc clean-build clean lint test doctest rollback version
 
-VERSION=0.1.0
+VERSION=0.2.0
 SOURCE_PATH=./dictmentor
 TEST_PATH=./tests
 
