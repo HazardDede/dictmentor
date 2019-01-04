@@ -284,3 +284,75 @@ class Environment(Extension):
         node_value = process(p, node_value)
 
         return {node_key: node_value}
+
+
+class Variables(Extension):
+    """
+    Enables the replacement of any variables in a dictionary.
+    Syntax: {{var::my_env}} -> Will be replaced by the value of the variable 'my_env'
+    Examples:
+        >>> from dictmentor import DictMentor
+        >>> jstr = '{"a": 1, "file_path": "my_file.{{var::environment}}.cfg"}'
+        >>> extension = Variables(environment='production')
+        >>> DictMentor().bind(extension).load_yaml(jstr) == {'a': 1, 'file_path': 'my_file.production.cfg'}
+        True
+        >>> extension = Variables(notenvironment="bla", default='default')
+        >>> DictMentor().bind(extension).load_yaml(jstr) == {'a': 1, 'file_path': 'my_file.default.cfg'}
+        True
+        >>> extension = Variables(notenvironment="bla", fail_on_unset=True)
+        >>> DictMentor().bind(extension).load_yaml(jstr) == {'a': 1, 'file_path': 'my_file.default.cfg'}
+        Traceback (most recent call last):
+        ...
+        dictmentor.extensions.ExtensionError: Variable 'environment' is unset.
+    """
+    __pattern__ = '.*({{var::(.*)}}).*'
+
+    def __init__(self, fail_on_unset=False, default='none', **vars):
+        """
+        Initializer.
+        Args:
+            fail_on_unset (bool): If set to True an exception will be raised when the environment variable is unset;
+                otherwise the default value (see next) will be used instead.
+            default (str): If a environment variable is unset, it will get this value instead.
+        """
+        self.fail_on_unset = bool(fail_on_unset)
+        self.default = str(default)
+        self.vars = vars
+
+    def _config(self):
+        """
+        Tells the processor to scan for the specified pattern in node keys and values.
+        Returns: The scanner configuration.
+        """
+        # tells the scanner to look for the specified pattern in key and value strings
+        return dict(pattern=self.__pattern__, search_in_keys=True, search_in_values=True)
+
+    def _apply(self, node, **ctx):
+        """
+        Replaces any {{var::*}} directives with it's actual variable value or a default.
+        Args:
+            node (tuple): Key and value of the current node.
+            **ctx: Additional (unused) context.
+        Returns:
+            Returns the altered node key and value.
+        """
+        node_key, node_value = node
+
+        def process(pattern, s):
+            m = pattern.match(s)
+            if m is None:
+                return s
+            # We got a match
+            # Group 0: Whole match; Group 1: Our placeholder; Group 2: The environment variable
+            placeholder, varname = m.group(1), m.group(2)
+            varval = self.vars.get(varname, None)
+            if varval is None and self.fail_on_unset:
+                raise ExtensionError("Variable '{}' is unset.".format(varname))
+
+            return s.replace(placeholder, varval or self.default)
+
+        p = re.compile(self.__pattern__)
+        node_key = process(p, node_key)
+        node_value = process(p, node_value)
+
+        return {node_key: node_value}

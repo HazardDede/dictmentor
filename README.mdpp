@@ -31,6 +31,14 @@ Please see existing extensions for a how-to.
 
 ## Extensions
 
+### Variables
+
+Augment the given dictionary by resolving pre-defined variables on the fly
+
+Example
+
+!INCLUDECODE "examples/Variables/run.py" (python)
+
 ### Environment
 
 Augment the given dictionary by resolving environment variables on the fly

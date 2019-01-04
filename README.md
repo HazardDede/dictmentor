@@ -7,9 +7,10 @@ A python utility framework to augment dictionaries
 1\.  [Installation](#installation)  
 2\.  [Getting started](#gettingstarted)  
 3\.  [Extensions](#extensions)  
-3.1\.  [Environment](#environment)  
-3.2\.  [ExternalResource](#externalresource)  
-3.3\.  [ExternalYamlResource](#externalyamlresource)  
+3.1\.  [Variables](#variables)  
+3.2\.  [Environment](#environment)  
+3.3\.  [ExternalResource](#externalresource)  
+3.4\.  [ExternalYamlResource](#externalyamlresource)  
 
 <a name="installation"></a>
 
@@ -74,9 +75,45 @@ Please see existing extensions for a how-to.
 
 ## 3\. Extensions
 
+<a name="variables"></a>
+
+### 3.1\. Variables
+
+Augment the given dictionary by resolving pre-defined variables on the fly
+
+Example
+
+```python
+# Import DictMentor and extensions
+import dictmentor.extensions as ext
+from dictmentor import DictMentor, utils
+
+yml = """
+statements:
+  my_env: "{{var::my_env}}"
+  home: "{{var::home}}"
+  unknown: "{{var::unknown}}"
+"""
+
+var_ext = ext.Variables(
+    my_env='development',
+    home="/home/pi",
+)
+result = DictMentor().bind(var_ext).load_yaml(yml)
+
+from pprint import pprint
+pprint(result)
+
+# Result:
+# {'statements': {'home': '/home/pi',
+#                 'my_env': 'development',
+#                 'unknown': 'none'}}
+
+```
+
 <a name="environment"></a>
 
-### 3.1\. Environment
+### 3.2\. Environment
 
 Augment the given dictionary by resolving environment variables on the fly
 
@@ -110,7 +147,7 @@ pprint(result)
 
 <a name="externalresource"></a>
 
-### 3.2\. ExternalResource
+### 3.3\. ExternalResource
 
 Augment the given dictionary by resolving files on disk (whether absolute or relative) and integrating their content.
 If the path to the file is specified in a relative manner you should pass a `base_path` to the `ExternalResource`
@@ -160,7 +197,7 @@ pprint(result)
 
 <a name="externalyamlresource"></a>
 
-### 3.3\. ExternalYamlResource
+### 3.4\. ExternalYamlResource
 
 Augment the given dictionary by resolving by yaml file on disk (whether absolute or relative) and integrating
 its content (as a dictionary) as the current node. The yaml's contents will be augmented as well.
