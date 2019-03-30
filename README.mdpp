@@ -1,6 +1,9 @@
 # dictmentor
 
+[![PyPI version](https://badge.fury.io/py/dictmentor.svg)](https://badge.fury.io/py/dictmentor)
 [![Build Status](https://travis-ci.org/HazardDede/dictmentor.svg?branch=master)](https://travis-ci.org/HazardDede/dictmentor)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 
 A python utility framework to augment dictionaries
 
