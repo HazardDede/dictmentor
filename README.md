@@ -2,6 +2,7 @@
 
 [![PyPI version](https://badge.fury.io/py/dictmentor.svg)](https://badge.fury.io/py/dictmentor)
 [![Build Status](https://travis-ci.org/HazardDede/dictmentor.svg?branch=master)](https://travis-ci.org/HazardDede/dictmentor)
+[![Coverage Status](https://coveralls.io/repos/github/HazardDede/dictmentor/badge.svg?branch=master)](https://coveralls.io/github/HazardDede/dictmentor?branch=master)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 
