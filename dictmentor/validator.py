@@ -1,18 +1,22 @@
+"""Contains argument validating stuff."""
+
 from functools import partial
 from pathlib import Path
 
 
-class Validator(object):
+class Validator:
     """
     Provides utility methods to easily validate arguments / variables.
     Per default the methods will return True / False whether the argument obeys the rules or not.
-    If raise_ex is set to True instead of returning True / False a meaningful exception will be thrown.
+    If raise_ex is set to True instead of returning True / False a meaningful exception will be
+    thrown.
 
-    The advantage of this component is to produce consistent validation and error messages in a more convenient
-    way that assert or other mechanisms do provide.
+    The advantage of this component is to produce consistent validation and error messages in a more
+    convenient way that assert or other mechanisms do provide.
 
-    But keep in mind: The most pythonic idiom is to clearly document what the function expects and then just try to
-    use whatever gets passed to your function. The validators are only for situations were you cannot avoid it.
+    But keep in mind: The most pythonic idiom is to clearly document what the function expects and
+    then just try to use whatever gets passed to your function. The validators are only for
+    situations were you cannot avoid it.
     """
     @staticmethod
     def __logical_dict_merge(first, second):
@@ -20,11 +24,11 @@ class Validator(object):
             return first
 
         res = first.copy()
-        for k, v in second.items():
+        for k, val in second.items():
             if k in first:
-                res[k] = res[k] and v
+                res[k] = res[k] and val
             else:
-                res[k] = v
+                res[k] = val
 
         return res
 
@@ -36,9 +40,12 @@ class Validator(object):
         res = {}
         if validators is not None:
             for validator in validators:
-                # Case 1: raise_ex=True -> We don't have anything to catch -> just propagate the error
-                # Case 2: summary=True -> We have to short circuit if the result is evaluated to False
-                # Case 3: raise_ex=False, summary=False -> We get a dictionary containing the evaluated conditions
+                # Case 1: raise_ex=True -> We don't have anything to catch
+                #   -> just propagate the error
+                # Case 2: summary=True
+                #   -> We have to short circuit if the result is evaluated to False
+                # Case 3: raise_ex=False, summary=False
+                #   -> We get a dictionary containing the evaluated conditions
                 # -> We need to merge them with the previous output / results
                 val_res = validator(raise_ex=raise_ex, summary=summary, **items)
                 if summary and not val_res:
@@ -64,15 +71,15 @@ class Validator(object):
     def instance_of(target_type=None, raise_ex=False, summary=True, **items):
         """
         Tests if the given key-value pairs (items) are instances of the given ``target_type``.
-        Per default this function yields whether ``True`` or ``False`` depending on the fact if all items withstand
-        the validation or not. Per default the validation / evaluation is short-circuit and will return as soon an item
-        evaluates to ``False``.
+        Per default this function yields whether ``True`` or ``False`` depending on the fact if all
+        items withstand the validation or not. Per default the validation / evaluation is
+        short-circuit and will return as soon an item evaluates to ``False``.
 
-        When ``raise_ex`` is set to ``True`` the function will raise a meaningful error message after the first item
-        evaluates to ``False`` (short-circuit).
+        When ``raise_ex`` is set to ``True`` the function will raise a meaningful error message
+        after the first item evaluates to ``False`` (short-circuit).
 
-        When ``summary`` is set to ``False`` a dictionary is returned containing the individual evaluation result of
-        each item (non short-circuit).
+        When ``summary`` is set to ``False`` a dictionary is returned containing the individual
+        evaluation result of each item (non short-circuit).
 
         Examples:
 
@@ -89,33 +96,41 @@ class Validator(object):
             Traceback (most recent call last):
                 ...
             ValueError: 'my_str2' (int) is not an instance of type 'str'
-            >>> (Validator.instance_of(my_str='str', my_str2='str2', non_str=5, target_type=str, summary=False)
+            >>> (Validator.instance_of(
+            ...     my_str='str', my_str2='str2', non_str=5, target_type=str, summary=False
+            ... )
             ... == {'my_str': True, 'my_str2': True, 'non_str': False})
             True
 
         Args:
-            raise_ex (bool, optional): If set to ``True`` an exception is raised if at least one item is
-            validated to ``False`` (works short-circuit and will abort the validation when the first item is
-            evaluated to ``False``).
+            raise_ex (bool, optional): If set to ``True`` an exception is raised if at least one
+            item is validated to ``False`` (works short-circuit and will abort the validation when
+            the first item is evaluated to ``False``).
 
-            summary (bool, optional): If set to ``False`` instead of returning just a single ``bool`` the validation
-            will return a dictionary containing the individual evaluation result of each item.
+            summary (bool, optional): If set to ``False`` instead of returning just a single
+            `bool` the validation will return a dictionary containing the individual evaluation
+            result of each item.
 
             target_type (type): The target type to test the values against.
 
         Returns:
-            (boolean or dictionary): ``True`` when the value was successfully validated; ``False`` otherwise.
-            If ``summary`` is set to ``False`` a dictionary containing the individual evaluation result of each item
-            will be returned.
-            If ``raise_ex`` is set to True, instead of returning False a meaningful error will be raised.
+            (boolean or dictionary): ``True`` when the value was successfully validated; ``False``
+                otherwise.
+            If ``summary`` is set to ``False`` a dictionary containing the individual evaluation
+            result of each item will be returned.
+            If ``raise_ex`` is set to True, instead of returning False a meaningful error will be
+            raised.
         """
 
         return Validator.__test_all(
             condition=lambda _, val: isinstance(val, target_type),
-            formatter=lambda name, val: "'{varname}' ({actual}) is not an instance of type '{ttype}'".format(
-                varname=name,
-                actual=type(val).__name__,
-                ttype=target_type.__name__
+            formatter=(
+                lambda name, val:
+                "'{varname}' ({actual}) is not an instance of type '{ttype}'".format(
+                    varname=name,
+                    actual=type(val).__name__,
+                    ttype=target_type.__name__
+                )
             ),
             raise_ex=raise_ex,
             summary=summary,
@@ -125,17 +140,17 @@ class Validator(object):
     @staticmethod
     def is_stream(raise_ex=False, summary=True, **items):
         """
-        Tests if the given key-value pairs (items) are all streams. Basically checks if the item provides a read(...)
-        method.
-        Per default this function yields whether ``True`` or ``False`` depending on the fact if all items withstand
-        the validation or not. Per default the validation / evaluation is short-circuit and will return as soon an item
-        evaluates to ``False``.
+        Tests if the given key-value pairs (items) are all streams. Basically checks if the item
+        provides a read(...) method.
+        Per default this function yields whether ``True`` or ``False`` depending on the fact if all
+        items withstand the validation or not. Per default the validation / evaluation is
+        short-circuit and will return as soon an item evaluates to ``False``.
 
-        When ``raise_ex`` is set to ``True`` the function will raise a meaningful error message after the first item
-        evaluates to ``False`` (short-circuit).
+        When ``raise_ex`` is set to ``True`` the function will raise a meaningful error message
+        after the first item evaluates to ``False`` (short-circuit).
 
-        When ``summary`` is set to ``False`` a dictionary is returned containing the individual evaluation result of
-        each item (non short-circuit).
+        When ``summary`` is set to ``False`` a dictionary is returned containing the individual
+        evaluation result of each item (non short-circuit).
 
         Examples:
 
@@ -158,18 +173,21 @@ class Validator(object):
 
         Args:
 
-            raise_ex (bool, optional): If set to ``True`` an exception is raised if at least one item is
-            validated to ``False`` (works short-circuit and will abort the validation when the first item is
-            evaluated to ``False``).
+            raise_ex (bool, optional): If set to ``True`` an exception is raised if at least one
+            item is validated to ``False`` (works short-circuit and will abort the validation when
+            the first item is evaluated to ``False``).
 
-            summary (bool, optional): If set to ``False`` instead of returning just a single ``bool`` the validation
-            will return a dictionary containing the individual evaluation result of each item.
+            summary (bool, optional): If set to ``False`` instead of returning just a single
+            ``bool`` the validation will return a dictionary containing the individual evaluation
+            result of each item.
 
         Returns:
-            (boolean or dictionary): ``True`` when the value was successfully validated; ``False`` otherwise.
-            If ``summary`` is set to ``False`` a dictionary containing the individual evaluation result of each item
-            will be returned.
-            If ``raise_ex`` is set to True, instead of returning False a meaningful error will be raised.
+            (boolean or dictionary): ``True`` when the value was successfully validated; ``False``
+                otherwise.
+            If ``summary`` is set to ``False`` a dictionary containing the individual evaluation
+            result of each item will be returned.
+            If ``raise_ex`` is set to True, instead of returning False a meaningful error will be
+            raised.
 
         """
         return Validator.__test_all(
@@ -183,16 +201,17 @@ class Validator(object):
     @staticmethod
     def is_file(raise_ex=False, summary=True, **items):
         """
-        Tests if the given key-value pairs (items) are physical existent files or links to regular files.
-        Per default this function yields whether ``True`` or ``False`` depending on the fact if all items withstand
-        the validation or not. Per default the validation / evaluation is short-circuit and will return as soon an item
-        evaluates to ``False``.
+        Tests if the given key-value pairs (items) are physical existent files or links to regular
+        files.
+        Per default this function yields whether ``True`` or ``False`` depending on the fact if all
+        items withstand the validation or not. Per default the validation / evaluation is
+        short-circuit and will return as soon an item evaluates to ``False``.
 
-        When ``raise_ex`` is set to ``True`` the function will raise a meaningful error message after the first item
-        evaluates to ``False`` (short-circuit).
+        When ``raise_ex`` is set to ``True`` the function will raise a meaningful error message
+        after the first item evaluates to ``False`` (short-circuit).
 
-        When ``summary`` is set to ``False`` a dictionary is returned containing the individual evaluation result of
-        each item (non short-circuit).
+        When ``summary`` is set to ``False`` a dictionary is returned containing the individual
+        evaluation result ofeach item (non short-circuit).
 
         Examples:
 
@@ -218,18 +237,21 @@ class Validator(object):
 
         Args:
 
-            raise_ex (bool, optional): If set to ``True`` an exception is raised if at least one item is
-            validated to ``False`` (works short-circuit and will abort the validation when the first item is
-            evaluated to ``False``).
+            raise_ex (bool, optional): If set to ``True`` an exception is raised if at least one i
+            tem is validated to ``False`` (works short-circuit and will abort the validation when
+            the first item is evaluated to ``False``).
 
-            summary (bool, optional): If set to ``False`` instead of returning just a single ``bool`` the validation
-            will return a dictionary containing the individual evaluation result of each item.
+            summary (bool, optional): If set to ``False`` instead of returning just a single
+            ``bool`` the validation will return a dictionary containing the individual evaluation
+            result of each item.
 
         Returns:
-            (boolean or dictionary): ``True`` when the value was successfully validated; ``False`` otherwise.
-            If ``summary`` is set to ``False`` a dictionary containing the individual evaluation result of each item
-            will be returned.
-            If ``raise_ex`` is set to True, instead of returning False a meaningful error will be raised.
+            (boolean or dictionary): ``True`` when the value was successfully validated; ``False``
+                otherwise.
+            If ``summary`` is set to ``False`` a dictionary containing the individual evaluation
+            result of each item will be returned.
+            If ``raise_ex`` is set to True, instead of returning False a meaningful error will be
+            raised.
 
         """
         return Validator.__test_all(
@@ -245,15 +267,15 @@ class Validator(object):
     def is_real_iterable(raise_ex=False, summary=True, **items):
         """
         Tests if the given items are iterables (collections) but no strings.
-        Per default this function yields whether ``True`` or ``False`` depending on the fact if all items withstand
-        the validation or not. Per default the validation / evaluation is short-circuit and will return as soon an item
-        evaluates to ``False``.
+        Per default this function yields whether ``True`` or ``False`` depending on the fact if all
+        items withstand the validation or not. Per default the validation / evaluation is
+        short-circuit and will return as soon an item evaluates to ``False``.
 
-        When ``raise_ex`` is set to ``True`` the function will raise a meaningful error message after the first item
-        evaluates to ``False`` (short-circuit).
+        When ``raise_ex`` is set to ``True`` the function will raise a meaningful error message
+        after the first item evaluates to ``False`` (short-circuit).
 
-        When ``summary`` is set to ``False`` a dictionary is returned containing the individual evaluation result of
-        each item (non short-circuit).
+        When ``summary`` is set to ``False`` a dictionary is returned containing the individual
+        evaluation result of each item (non short-circuit).
 
         Examples:
 
@@ -276,18 +298,21 @@ class Validator(object):
 
         Args:
 
-            raise_ex (bool, optional): If set to ``True`` an exception is raised if at least one item is
-            validated to ``False`` (works short-circuit and will abort the validation when the first item is
-            evaluated to ``False``).
+            raise_ex (bool, optional): If set to ``True`` an exception is raised if at least one
+            item is validated to ``False`` (works short-circuit and will abort the validation when
+            the first item is evaluated to ``False``).
 
-            summary (bool, optional): If set to ``False`` instead of returning just a single ``bool`` the validation
-            will return a dictionary containing the individual evaluation result of each item.
+            summary (bool, optional): If set to ``False`` instead of returning just a single
+            ``bool`` the validation will return a dictionary containing the individual evaluation
+            result of each item.
 
         Returns:
-            (boolean or dictionary): ``True`` when the value was successfully validated; ``False`` otherwise.
-            If ``summary`` is set to ``False`` a dictionary containing the individual evaluation result of each item
-            will be returned.
-            If ``raise_ex`` is set to True, instead of returning False a meaningful error will be raised.
+            (boolean or dictionary): ``True`` when the value was successfully validated; ``False``
+                otherwise.
+            If ``summary`` is set to ``False`` a dictionary containing the individual evaluation
+            result of each item will be returned.
+            If ``raise_ex`` is set to True, instead of returning False a meaningful error will be
+            raised.
 
         """
 
