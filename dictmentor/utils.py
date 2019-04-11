@@ -1,3 +1,5 @@
+"""Contains utility functions / classes."""
+
 import contextlib
 import os
 import re
@@ -40,20 +42,20 @@ def dict_find_pattern(dic, pattern, search_in_keys=True, search_in_values=True):
     def find(dic, regex):
         Validator.instance_of(target_type=dict, raise_ex=True, dic=dic)
 
-        for k, v in dic.items():
+        for k, val in dic.items():
             if search_in_keys and isinstance(k, str) and regex.match(k):
-                yield dic, k, v
-            if search_in_values and isinstance(v, str) and regex.match(v):
-                yield dic, k, v
-            if isinstance(v, list):
-                for li in v:
+                yield dic, k, val
+            if search_in_values and isinstance(val, str) and regex.match(val):
+                yield dic, k, val
+            if isinstance(val, list):
+                for litem in val:
                     # if value and isinstance(li, str) and regex.match(li):
                     #     yield dic, k, li
-                    if isinstance(li, dict):
-                        for j in find(li, regex):
+                    if isinstance(litem, dict):
+                        for j in find(litem, regex):
                             yield j
-            if isinstance(v, dict):
-                for j in find(v, regex):
+            if isinstance(val, dict):
+                for j in find(val, regex):
                     yield j
 
     regex = re.compile(pattern)
@@ -63,12 +65,18 @@ def dict_find_pattern(dic, pattern, search_in_keys=True, search_in_values=True):
 @contextlib.contextmanager
 def modified_environ(*remove, **update):
     """
-    Temporarily updates the ``os.environ`` dictionary in-place and resets it to the original state when finished.
-    (https://stackoverflow.com/questions/2059482/python-temporarily-modify-the-current-processs-environment/34333710#34333710)
-    The ``os.environ`` dictionary is updated in-place so that the modification is sure to work in all situations.
+    Temporarily updates the ``os.environ`` dictionary in-place and resets it to the original state
+    when finished.
+    (https://stackoverflow.com/questions/2059482/
+        python-temporarily-modify-the-current-processs-environment/34333710#34333710)
+
+    The ``os.environ`` dictionary is updated in-place so that the modification is sure to work in
+    all situations.
+
     Args:
         remove: Environment variables to remove.
         update: Dictionary of environment variables and values to add/update.
+
     Examples:
         >>> with modified_environ(Test='abc'):
         ...     import os
@@ -90,17 +98,17 @@ def modified_environ(*remove, **update):
 
     try:
         env.update(update)
-        [env.pop(k, None) for k in remove]
+        [env.pop(k, None) for k in remove]  # pylint: disable=expression-not-assigned
         yield
     finally:
         env.update(update_after)
-        [env.pop(k) for k in remove_after]
+        [env.pop(k) for k in remove_after]  # pylint: disable=expression-not-assigned
 
 
 def eval_first_non_none(eval_list, **kwargs):
     """
-    Executes a list of functions and returns the first non none result. All kwargs will be passed as kwargs to each
-    individual function. If all functions return None, None is the overall result.
+    Executes a list of functions and returns the first non none result. All kwargs will be passed as
+    kwargs to each individual function. If all functions return None, None is the overall result.
 
     Examples:
 
@@ -124,40 +132,49 @@ def eval_first_non_none(eval_list, **kwargs):
     return None
 
 
-class FileLocator:
+class FileLocator:  # pylint: disable=too-few-public-methods
     """
     Based on a base_path, the given file path and a possible parent file path the locator
     will construct a absolute file_path if the given file name is relative.
 
-    If the file path is absolute the absolute file path will be used. If it's relative and a base_path is given the
-    both will be concatenated. If no base path is given, the path from the parent file path will be used. If there is
-    no parent file path the current working directory is the default.
+    If the file path is absolute the absolute file path will be used. If it's relative and a
+    base_path is given the both will be concatenated. If no base path is given, the path from the
+    parent file path will be used. If there is no parent file path the current working directory is
+    the default.
     """
 
     def __init__(self, base_path=None, parent_overrides_base=False):
         """
         Args:
             base_path:
-            parent_overrides_base: If set to True the file path of the parent (if any) will overrule the base_path;
-                otherwise the base_path will overrule the parent's file path even (if any).
+            parent_overrides_base: If set to True the file path of the parent (if any) will
+                overrule the base_path; otherwise the base_path will overrule the parent's file
+                path even (if any).
         """
         self.base_path = base_path and str(base_path)
         self.parent_overrides_base = bool(parent_overrides_base)
 
-    def _eval_absolute_path(self, abs_or_rel_file_path, **kwargs):
+    @staticmethod
+    def _eval_absolute_path(abs_or_rel_file_path, parent_file_path=None):  # pylint: disable=unused-argument
         if os.path.isabs(abs_or_rel_file_path):
             return abs_or_rel_file_path
+        return None
 
-    def _eval_base_path(self, abs_or_rel_file_path, **kwargs):
+    def _eval_base_path(self, abs_or_rel_file_path, parent_file_path=None):  # pylint: disable=unused-argument
         if self.base_path is not None:
             return os.path.join(self.base_path, abs_or_rel_file_path)
+        return None
 
-    def _eval_parent_file_path(self, abs_or_rel_file_path, parent_file_path, **kwargs):
+    @staticmethod
+    def _eval_parent_file_path(abs_or_rel_file_path, parent_file_path):
         if parent_file_path is not None and Validator.is_file(parent_file_path=parent_file_path):
-            # If the yaml data is from a file, we assume the base_path should be the path where the file is located
+            # If the yaml data is from a file, we assume the base_path should be the path where
+            # the file is located
             return os.path.join(os.path.dirname(parent_file_path), abs_or_rel_file_path)
+        return None
 
-    def _eval_cwd(self, abs_or_rel_file_path, **kwargs):
+    @staticmethod
+    def _eval_cwd(abs_or_rel_file_path, parent_file_path=None):  # pylint: disable=unused-argument
         return os.path.join(os.getcwd(), abs_or_rel_file_path)
 
     def _eval_list(self):
@@ -168,12 +185,14 @@ class FileLocator:
 
     def __call__(self, abs_or_rel_file_path, parent_file_path=None):
         """
-        Given a file_path and the actual file path of the parent file the absolute path of the potential relative path
-        will be determined. If `parent_file_path` is not None that basically means that the file to locate is part
-        of an externally loaded file.
+        Given a file_path and the actual file path of the parent file the absolute path of the
+        potential relative path will be determined. If `parent_file_path` is not None that basically
+        means that the file to locate is part of an externally loaded file.
+
         Args:
             abs_or_rel_file_path: Absolute or relative file path.
             parent_file_path: When it's a file it is used to determine a base path if necessary.
+
         Returns:
             Returns the absolute path of the file. If it's already absolute, nothing changes.
         """
