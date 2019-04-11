@@ -15,7 +15,7 @@ class DictMentor:
     """
 
     def __init__(self, *extensions: Extension):
-        self._extensions: List[Extension] = []
+        self._extensions = []  # type: List[Extension]
         self._init_extensions([ext for ext in extensions])
 
     def _init_extensions(self, extensions: Iterable[Extension]) -> None:

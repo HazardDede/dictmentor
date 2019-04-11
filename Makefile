@@ -47,7 +47,7 @@ docs: README.mdpp
 
 lint:
 		flake8 --exclude=.tox --max-line-length 120 --ignore=E722 $(SOURCE_PATH)
-		pylint $(SOURCE_PATH)
+		pylint --disable=import-error $(SOURCE_PATH)
 		mypy --strict $(SOURCE_PATH)
 
 test:

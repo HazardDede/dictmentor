@@ -43,7 +43,7 @@ class Validator:
         assert callable(condition)
         assert callable(formatter)
 
-        res: Dict[Any, bool] = {}
+        res = {}  # type: Dict[Any, bool]
         if validators is not None:
             for validator in validators:
                 # Case 1: raise_ex=True -> We don't have anything to catch

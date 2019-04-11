@@ -28,11 +28,12 @@ class ExtensionContext:  # pylint: disable=too-few-public-methods
             dictionary.
         * node: Tuple of key and value of the node that matches the pattern.
     """
-    mentor: Any = attr.ib()  # Actual a DictMentor instance, but not explicit due to circle ref
-    document: Union[YamlDocument, AugmentedDict] = attr.ib()
-    dct: AugmentedDict = attr.ib()
-    parent_node: Dict[Any, Any] = attr.ib()
-    node: NodeKeyVal = attr.ib()
+    # Actual a DictMentor instance, but not explicit due to circle ref
+    mentor = attr.ib()  # type: Any
+    document = attr.ib()  # type: Union[YamlDocument, AugmentedDict]
+    dct = attr.ib()  # type: AugmentedDict
+    parent_node = attr.ib()  # type: Dict[Any, Any]
+    node = attr.ib()  # type: NodeKeyVal
 
 
 class Extension:

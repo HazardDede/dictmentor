@@ -186,7 +186,7 @@ class FileLocator:  # pylint: disable=too-few-public-methods
         return os.path.join(os.getcwd(), abs_or_rel_file_path)
 
     def _eval_list(self) -> Iterable[PathEvalCallable]:
-        eval_list: List[PathEvalCallable] = [self._eval_absolute_path]
+        eval_list = [self._eval_absolute_path]  # type: List[PathEvalCallable]
         if self.parent_overrides_base:
             return eval_list + [self._eval_parent_file_path, self._eval_base_path, self._eval_cwd]
         return eval_list + [self._eval_base_path, self._eval_parent_file_path, self._eval_cwd]
