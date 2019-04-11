@@ -3,6 +3,7 @@
 bumpversion
 coveralls
 flake8
+mypy
 pylint
 pytest>=3.6
 pytest-cov

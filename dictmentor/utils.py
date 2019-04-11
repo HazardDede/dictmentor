@@ -3,11 +3,17 @@
 import contextlib
 import os
 import re
+from typing import Dict, Any, Pattern, Iterable, Callable, List, Tuple, Iterator, Optional, cast
 
+from .types import YamlDocument
 from .validator import Validator
 
+PatternGenerator = Iterator[Tuple[Dict[Any, Any], str, Any]]
+PathEvalCallable = Callable[[str, Optional[str]], Optional[str]]
 
-def dict_find_pattern(dic, pattern, search_in_keys=True, search_in_values=True):
+
+def dict_find_pattern(_dict: Dict[Any, Any], pattern: str, search_in_keys: bool = True,
+                      search_in_values: bool = True) -> PatternGenerator:
     """
     Find keys and values in a (nested) dictionary with regular expression pattern.
     Examples:
@@ -30,7 +36,7 @@ def dict_find_pattern(dic, pattern, search_in_keys=True, search_in_values=True):
         bar baz
 
     Args:
-        dic: Dictionary to scan for the specified pattern.
+        _dict: Dictionary to scan for the specified pattern.
         pattern: The pattern to scan for.
         search_in_keys: If True keys will be probed for the pattern; otherwise not.
         search_in_values: If True values will be probed for the pattern; otherwise not.
@@ -39,7 +45,7 @@ def dict_find_pattern(dic, pattern, search_in_keys=True, search_in_values=True):
         Generator to iterate over the findings.
     """
 
-    def find(dic, regex):
+    def find(dic: Dict[Any, Any], regex: Pattern[str]) -> PatternGenerator:
         Validator.instance_of(target_type=dict, raise_ex=True, dic=dic)
 
         for k, val in dic.items():
@@ -49,8 +55,6 @@ def dict_find_pattern(dic, pattern, search_in_keys=True, search_in_values=True):
                 yield dic, k, val
             if isinstance(val, list):
                 for litem in val:
-                    # if value and isinstance(li, str) and regex.match(li):
-                    #     yield dic, k, li
                     if isinstance(litem, dict):
                         for j in find(litem, regex):
                             yield j
@@ -59,11 +63,11 @@ def dict_find_pattern(dic, pattern, search_in_keys=True, search_in_values=True):
                     yield j
 
     regex = re.compile(pattern)
-    return find(dic, regex)
+    return find(_dict, regex)
 
 
 @contextlib.contextmanager
-def modified_environ(*remove, **update):
+def modified_environ(*remove: str, **update: str) -> Iterator[None]:
     """
     Temporarily updates the ``os.environ`` dictionary in-place and resets it to the original state
     when finished.
@@ -87,7 +91,7 @@ def modified_environ(*remove, **update):
     """
     env = os.environ
     update = update or {}
-    remove = remove or []
+    remove = remove or ()
 
     # List of environment variables being updated or removed.
     stomped = (set(update.keys()) | set(remove)) & set(env.keys())
@@ -105,7 +109,7 @@ def modified_environ(*remove, **update):
         [env.pop(k) for k in remove_after]  # pylint: disable=expression-not-assigned
 
 
-def eval_first_non_none(eval_list, **kwargs):
+def eval_first_non_none(eval_list: Iterable[Callable[..., Any]], **kwargs: Any) -> Any:
     """
     Executes a list of functions and returns the first non none result. All kwargs will be passed as
     kwargs to each individual function. If all functions return None, None is the overall result.
@@ -143,7 +147,7 @@ class FileLocator:  # pylint: disable=too-few-public-methods
     the default.
     """
 
-    def __init__(self, base_path=None, parent_overrides_base=False):
+    def __init__(self, base_path: Optional[str] = None, parent_overrides_base: bool = False):
         """
         Args:
             base_path:
@@ -155,18 +159,21 @@ class FileLocator:  # pylint: disable=too-few-public-methods
         self.parent_overrides_base = bool(parent_overrides_base)
 
     @staticmethod
-    def _eval_absolute_path(abs_or_rel_file_path, parent_file_path=None):  # pylint: disable=unused-argument
+    def _eval_absolute_path(abs_or_rel_file_path: str,
+                            parent_file_path: Optional[str] = None) -> Optional[str]:  # pylint: disable=unused-argument
         if os.path.isabs(abs_or_rel_file_path):
             return abs_or_rel_file_path
         return None
 
-    def _eval_base_path(self, abs_or_rel_file_path, parent_file_path=None):  # pylint: disable=unused-argument
+    def _eval_base_path(self, abs_or_rel_file_path: str,
+                        parent_file_path: Optional[str] = None) -> Optional[str]:  # pylint: disable=unused-argument
         if self.base_path is not None:
             return os.path.join(self.base_path, abs_or_rel_file_path)
         return None
 
     @staticmethod
-    def _eval_parent_file_path(abs_or_rel_file_path, parent_file_path):
+    def _eval_parent_file_path(abs_or_rel_file_path: str,
+                               parent_file_path: Optional[str]) -> Optional[str]:
         if parent_file_path is not None and Validator.is_file(parent_file_path=parent_file_path):
             # If the yaml data is from a file, we assume the base_path should be the path where
             # the file is located
@@ -174,16 +181,18 @@ class FileLocator:  # pylint: disable=too-few-public-methods
         return None
 
     @staticmethod
-    def _eval_cwd(abs_or_rel_file_path, parent_file_path=None):  # pylint: disable=unused-argument
+    def _eval_cwd(abs_or_rel_file_path: str,
+                  parent_file_path: Optional[str] = None) -> Optional[str]:  # pylint: disable=unused-argument
         return os.path.join(os.getcwd(), abs_or_rel_file_path)
 
-    def _eval_list(self):
-        eval_list = [self._eval_absolute_path]
+    def _eval_list(self) -> Iterable[PathEvalCallable]:
+        eval_list: List[PathEvalCallable] = [self._eval_absolute_path]
         if self.parent_overrides_base:
             return eval_list + [self._eval_parent_file_path, self._eval_base_path, self._eval_cwd]
         return eval_list + [self._eval_base_path, self._eval_parent_file_path, self._eval_cwd]
 
-    def __call__(self, abs_or_rel_file_path, parent_file_path=None):
+    def __call__(self, abs_or_rel_file_path: str,
+                 parent_file_path: Optional[YamlDocument] = None) -> str:
         """
         Given a file_path and the actual file path of the parent file the absolute path of the
         potential relative path will be determined. If `parent_file_path` is not None that basically
@@ -196,8 +205,8 @@ class FileLocator:  # pylint: disable=too-few-public-methods
         Returns:
             Returns the absolute path of the file. If it's already absolute, nothing changes.
         """
-        return eval_first_non_none(
+        return cast(str, eval_first_non_none(
             self._eval_list(),
             abs_or_rel_file_path=abs_or_rel_file_path,
             parent_file_path=parent_file_path
-        )
+        ))

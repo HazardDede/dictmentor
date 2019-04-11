@@ -50,6 +50,7 @@ setup(
     },
     packages=find_packages(exclude=["tests", "docs"]),
     install_requires=[
+        'attrs>=19.0.0'
         'ruamel.yaml>=0.15.0'
     ],
     python_requires='>=3.4',
