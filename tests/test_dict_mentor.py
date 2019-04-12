@@ -48,4 +48,4 @@ def test_load_yaml_invalid():
     with pytest.raises(TypeError) as te:
         DictMentor().load_yaml(5)
 
-    assert "Argument 'yaml_' is whether a stream, nor a file, nor a string" in str(te)
+    assert "Argument '_yaml' is whether a stream, nor a file, nor a string" in str(te)

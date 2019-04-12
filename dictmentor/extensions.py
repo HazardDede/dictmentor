@@ -3,7 +3,11 @@
 import os
 import re
 from abc import abstractmethod
+from typing import Any, Pattern, Union, cast, Optional, Dict
 
+import attr
+
+from .types import ExtensionConfig, AugmentedDict, YamlDocument, NodeKeyVal
 from .utils import FileLocator
 from .validator import Validator
 
@@ -12,16 +16,36 @@ class ExtensionError(Exception):
     """Is raised when an error occurrs within an extension."""
 
 
+@attr.s
+class ExtensionContext:  # pylint: disable=too-few-public-methods
+    """
+    Context for processing
+        * mentor: The processor (DictMentor) instance.
+        * document: The document as it was passed to the processor. Might be a file name,
+            stream, string or dictionary.
+        * dct: The whole dictionary not just parts of it.
+        * parent_node: The parent_node of node that has the configured pattern as a python
+            dictionary.
+        * node: Tuple of key and value of the node that matches the pattern.
+    """
+    # Actual a DictMentor instance, but not explicit due to circle ref
+    mentor = attr.ib()  # type: Any
+    document = attr.ib()  # type: Union[YamlDocument, AugmentedDict]
+    dct = attr.ib()  # type: AugmentedDict
+    parent_node = attr.ib()  # type: Dict[Any, Any]
+    node = attr.ib()  # type: NodeKeyVal
+
+
 class Extension:
     """
     Provides a general interface for any extension.
     """
     @classmethod
-    def is_valid_extension(cls, candidate):
+    def is_valid_extension(cls, candidate: Any) -> bool:
         """Checks if the given candidate is a valid extension for dictmentor."""
         return hasattr(candidate, 'apply') and hasattr(candidate, 'config')
 
-    def config(self):
+    def config(self) -> ExtensionConfig:
         """
         Instructs the `DictMentor` scanner which nodes are relevant for this extension.
         A config consists of three configurable instruction arguments:
@@ -51,34 +75,27 @@ class Extension:
         return self._config()
 
     @abstractmethod
-    def _config(self):
+    def _config(self) -> ExtensionConfig:
         raise NotImplementedError()  # pragma: no cover
 
-    def apply(self, **ctx):
+    def apply(self, ctx: ExtensionContext) -> AugmentedDict:
         """
         This method gets called every time a configured pattern is found in the dictionary.
         See Args section for the available context that is passed.
 
         Args:
-            ctx (dict): Context for processing. What is part of the context depends but normally it
-                will consist of
-                * mentor: The processor (DictMentor) instance.
-                * document: The document as it was passed to the processor. Might be a file name,
-                    stream, string or dictionary.
-                * dct: The whole dictionary not just parts of it.
-                * parent_node: The parent_node of node that has the configured pattern as a python
-                    dictionary.
-                * node: Tuple of key and value of the node that matches the pattern.
+            ctx (dict): The processing context.
+
         Returns:
             Returns a python dictionary. The dictionary will be integrated into dictionary model.
             Basically parent_node.update(result) will be called to modify the dictionarx model.
             This way you can modify even more than just the actual key / value pair.
             See the implementation of `ExternalResource` which leverages this feature.
         """
-        return self._apply(**ctx)
+        return self._apply(ctx)
 
     @abstractmethod
-    def _apply(self, **ctx):
+    def _apply(self, ctx: ExtensionContext) -> AugmentedDict:
         raise NotImplementedError()  # pragma: no cover
 
 
@@ -102,7 +119,7 @@ class ExternalResource(Extension):
     """
     __pattern__ = '.*({{external::(.*)}}).*'
 
-    def __init__(self, base_path=None, locator=None):
+    def __init__(self, base_path: Optional[str] = None, locator: Optional[FileLocator] = None):
         """
         Initializer.
 
@@ -117,27 +134,24 @@ class ExternalResource(Extension):
         else:
             self.locator = locator
 
-    def _config(self):
+    def _config(self) -> ExtensionConfig:
         """
         Tells the processor to scan for the given pattern on node values only.
         Returns: The processor scanning configuration.
         """
         return dict(pattern=self.__pattern__, search_in_keys=False, search_in_values=True)
 
-    def _apply(self, document, node, **ctx):  # pylint: disable=arguments-differ
+    def _apply(self, ctx: ExtensionContext) -> AugmentedDict:
         """
         Performs the actual loading of an external resource into the current model.
 
         Args:
-            mentor (DictMentor): Current processor.
-            document: The actual raw yaml model.
-            node: Tuple of node key and value of the current node to process.
-            **ctx: Additional (unused) context.
+            ctx: The processing context.
 
         Returns:
             Returns a dictionary that gets incorporated into the actual model.
         """
-        def process(pattern, _str):
+        def process(pattern: Pattern[str], _str: str) -> Any:
             _match = pattern.match(_str)
             if _match is None:
                 return _str  # pragma: no cover
@@ -147,13 +161,13 @@ class ExternalResource(Extension):
             placeholder, external_path = _match.group(1), _match.group(2)
             with open(self.locator(
                     external_path,
-                    document if Validator.is_file(document=document) else None
+                    cast(str, ctx.document) if Validator.is_file(document=ctx.document) else None
             )) as fhandle:
                 # Json does not support line breaks. We will have to mask them
                 content = fhandle.read()
             return _str.replace(placeholder, content)
 
-        node_key, node_value = node
+        node_key, node_value = ctx.node
         _pattern = re.compile(self.__pattern__)
         return {node_key: process(_pattern, node_value)}
 
@@ -192,9 +206,10 @@ class ExternalYamlResource(ExternalResource):
     """
     __pattern__ = r'^\s*external\s*$'
 
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any):
         """
         Initializer.
+
         Args:
             base_path: Override the path for external resource lookups with relative links.
                 Default path is where the yaml file is located. When the yaml data comes from a
@@ -202,33 +217,28 @@ class ExternalYamlResource(ExternalResource):
         """
         super().__init__(**kwargs)
 
-    def _config(self):
+    def _config(self) -> ExtensionConfig:
         """
         Tells the processor to look for the specified pattern in node key only.
         Returns: The scanner configuration.
         """
         return dict(pattern=self.__pattern__, search_in_keys=True, search_in_values=False)
 
-    def _apply(self, mentor, document, node, **ctx):  # pylint: disable=arguments-differ
+    def _apply(self, ctx: ExtensionContext) -> Any:
         """
         Loads a yaml fragment from an external file.
 
         Args:
-            mentor (DictMentor): The processor. Used to delegate work on yaml fragments.
-            document: Is the stream, file or string that contains the actual yaml content.
-                Used to determine the content path.
-            node (tuple): Tuple consisting of the node's key and value, where the pattern external
-                resource was found.
-            ctx: Additional (unused) context.
+            ctx: The processing context.
 
         Returns:
             The external resource as a python dictionary. The fragment is already send through
             the processor as well.
         """
-        _, external_path = node
-        return mentor.load_yaml(self.locator(
+        _, external_path = ctx.node
+        return ctx.mentor.load_yaml(self.locator(
             external_path,
-            document if Validator.is_file(document=document) else None
+            cast(str, ctx.document) if Validator.is_file(document=ctx.document) else None
         ))
 
 
@@ -262,7 +272,7 @@ class Environment(Extension):
     """
     __pattern__ = '.*({{env::(.*)}}).*'
 
-    def __init__(self, fail_on_unset=False, default='none'):
+    def __init__(self, fail_on_unset: bool = False, default: str = 'none'):
         """
         Initializer.
         Args:
@@ -273,7 +283,7 @@ class Environment(Extension):
         self.fail_on_unset = bool(fail_on_unset)
         self.default = str(default)
 
-    def _config(self):
+    def _config(self) -> ExtensionConfig:
         """
         Tells the processor to scan for the specified pattern in node keys and values.
         Returns: The scanner configuration.
@@ -281,18 +291,19 @@ class Environment(Extension):
         # tells the scanner to look for the specified pattern in key and value strings
         return dict(pattern=self.__pattern__, search_in_keys=True, search_in_values=True)
 
-    def _apply(self, node, **ctx):  # pylint: disable=arguments-differ
+    def _apply(self, ctx: ExtensionContext) -> AugmentedDict:
         """
         Replaces any {{env::*}} directives with it's actual environment variable value or a default.
+
         Args:
-            node (tuple): Key and value of the current node.
-            **ctx: Additional (unused) context.
+            ctx: The processing context.
+
         Returns:
             Returns the altered node key and value.
         """
-        node_key, node_value = node
+        node_key, node_value = ctx.node
 
-        def process(pattern, _str):
+        def process(pattern: Pattern[str], _str: str) -> str:
             _match = pattern.match(_str)
             if _match is None:
                 return _str
@@ -336,7 +347,7 @@ class Variables(Extension):
     """
     __pattern__ = '.*({{var::(.*)}}).*'
 
-    def __init__(self, fail_on_unset=False, default='none', **_vars):
+    def __init__(self, fail_on_unset: bool = False, default: str = 'none', **_vars: Any):
         """
         Initializer.
 
@@ -349,7 +360,7 @@ class Variables(Extension):
         self.default = str(default)
         self.vars = _vars
 
-    def _config(self):
+    def _config(self) -> ExtensionConfig:
         """
         Tells the processor to scan for the specified pattern in node keys and values.
         Returns: The scanner configuration.
@@ -357,20 +368,19 @@ class Variables(Extension):
         # tells the scanner to look for the specified pattern in key and value strings
         return dict(pattern=self.__pattern__, search_in_keys=True, search_in_values=True)
 
-    def _apply(self, node, **ctx):  # pylint: disable=arguments-differ
+    def _apply(self, ctx: ExtensionContext) -> AugmentedDict:
         """
         Replaces any {{var::*}} directives with it's actual variable value or a default.
 
         Args:
-            node (tuple): Key and value of the current node.
-            **ctx: Additional (unused) context.
+            ctx: The processing context.
 
         Returns:
             Returns the altered node key and value.
         """
-        node_key, node_value = node
+        node_key, node_value = ctx.node
 
-        def process(pattern, _str):
+        def process(pattern: Pattern[str], _str: str) -> Any:
             _match = pattern.match(_str)
             if _match is None:
                 return _str

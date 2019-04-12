@@ -1,0 +1,13 @@
+#!/bin/bash
+
+ORIGIN=$(dirname `which $0`)
+SOURCE_PATH=${ORIGIN}/../dictmentor
+TEST_PATH=${ORIGIN}/../tests
+
+pytest \
+    --capture=no \
+    --color=yes \
+    --cov=${SOURCE_PATH} --cov-report html --cov-report term \
+    --doctest-modules ${SOURCE_PATH} \
+    --verbose \
+    $@

@@ -2,6 +2,9 @@
 
 from functools import partial
 from pathlib import Path
+from typing import Dict, Any, Callable, Iterable, cast, Union, Optional
+
+ValidationReturn = Union[bool, Dict[str, bool]]
 
 
 class Validator:
@@ -19,7 +22,7 @@ class Validator:
     situations were you cannot avoid it.
     """
     @staticmethod
-    def __logical_dict_merge(first, second):
+    def __logical_dict_merge(first: Dict[Any, bool], second: Dict[Any, bool]) -> Dict[Any, bool]:
         if second is None or not isinstance(second, dict):
             return first
 
@@ -33,11 +36,14 @@ class Validator:
         return res
 
     @staticmethod
-    def __test_all(condition, formatter, raise_ex, summary, validators=None, **items):
+    def __test_all(condition: Callable[[str, Any], bool],
+                   formatter: Callable[[str, Any], str], raise_ex: bool, summary: bool,
+                   validators: Optional[Iterable[Callable[..., ValidationReturn]]] = None,
+                   **items: Any) -> ValidationReturn:
         assert callable(condition)
         assert callable(formatter)
 
-        res = {}
+        res = {}  # type: Dict[Any, bool]
         if validators is not None:
             for validator in validators:
                 # Case 1: raise_ex=True -> We don't have anything to catch
@@ -50,7 +56,7 @@ class Validator:
                 val_res = validator(raise_ex=raise_ex, summary=summary, **items)
                 if summary and not val_res:
                     return False
-                res = Validator.__logical_dict_merge(res, val_res)
+                res = Validator.__logical_dict_merge(res, cast(Dict[Any, bool], val_res))
 
         cond_res = {}
         for varname, val in items.items():
@@ -68,7 +74,8 @@ class Validator:
         return res if not summary else all(res.items())
 
     @staticmethod
-    def instance_of(target_type=None, raise_ex=False, summary=True, **items):
+    def instance_of(target_type: Optional[type] = None, raise_ex: bool = False,
+                    summary: bool = True, **items: Any) -> ValidationReturn:
         """
         Tests if the given key-value pairs (items) are instances of the given ``target_type``.
         Per default this function yields whether ``True`` or ``False`` depending on the fact if all
@@ -121,15 +128,17 @@ class Validator:
             If ``raise_ex`` is set to True, instead of returning False a meaningful error will be
             raised.
         """
+        if not target_type:
+            raise ValueError("Argument 'target_type' is None")
 
         return Validator.__test_all(
-            condition=lambda _, val: isinstance(val, target_type),
+            condition=lambda _, val: isinstance(val, cast(type, target_type)),
             formatter=(
                 lambda name, val:
                 "'{varname}' ({actual}) is not an instance of type '{ttype}'".format(
                     varname=name,
                     actual=type(val).__name__,
-                    ttype=target_type.__name__
+                    ttype=cast(type, target_type).__name__
                 )
             ),
             raise_ex=raise_ex,
@@ -138,7 +147,8 @@ class Validator:
         )
 
     @staticmethod
-    def is_stream(raise_ex=False, summary=True, **items):
+    def is_stream(raise_ex: bool = False, summary: bool = True,
+                  **items: Any) -> ValidationReturn:
         """
         Tests if the given key-value pairs (items) are all streams. Basically checks if the item
         provides a read(...) method.
@@ -199,7 +209,8 @@ class Validator:
         )
 
     @staticmethod
-    def is_file(raise_ex=False, summary=True, **items):
+    def is_file(raise_ex: bool = False, summary: bool = True,
+                **items: Any) -> ValidationReturn:
         """
         Tests if the given key-value pairs (items) are physical existent files or links to regular
         files.
@@ -264,7 +275,8 @@ class Validator:
         )
 
     @staticmethod
-    def is_real_iterable(raise_ex=False, summary=True, **items):
+    def is_real_iterable(raise_ex: bool = False, summary: bool = True,
+                         **items: Any) -> ValidationReturn:
         """
         Tests if the given items are iterables (collections) but no strings.
         Per default this function yields whether ``True`` or ``False`` depending on the fact if all
