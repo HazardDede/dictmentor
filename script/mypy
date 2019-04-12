@@ -1,0 +1,19 @@
+#!/bin/bash
+
+SOURCE_PATH=$1
+if [ -z ${SOURCE_PATH} ]; then
+    ORIGIN=$(dirname `which $0`)
+    SOURCE_PATH=${ORIGIN}/../dictmentor
+fi
+
+echo "Using source path: ${SOURCE_PATH}"
+
+echo "Python version: `python --version`"
+python -c 'import sys; exit(0) if sys.version_info.major >= 3 and sys.version_info.minor >= 5 else exit(1)'
+
+if [ $? -eq 0 ]; then
+    mypy --strict ${SOURCE_PATH}
+else
+    echo "Running mypy not supported. Python version needs to be 3.5+"
+    exit 0
+fi

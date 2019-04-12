@@ -1,0 +1,11 @@
+#!/bin/bash
+
+SOURCE_PATH=$1
+if [ -z ${SOURCE_PATH} ]; then
+    ORIGIN=$(dirname `which $0`)
+    SOURCE_PATH=${ORIGIN}/../dictmentor
+fi
+
+echo "Using source path: ${SOURCE_PATH}"
+
+pylint --disable=import-error ${SOURCE_PATH}
