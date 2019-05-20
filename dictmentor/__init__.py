@@ -10,4 +10,4 @@ ext = extensions  # pylint: disable=invalid-name
 
 def version() -> Version:
     """Return the version of the package."""
-    return '0.2.0'
+    return '0.2.1'
