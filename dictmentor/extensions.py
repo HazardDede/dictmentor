@@ -270,7 +270,7 @@ class Environment(Extension):
         ...
         dictmentor.extensions.ExtensionError: Environment variable 'ENVIRONMENT' is unset.
     """
-    __pattern__ = '.*({{env::(.*)}}).*'
+    __pattern__ = '.*({{env::(.*?)(:=(.*))?}}).*'
 
     def __init__(self, fail_on_unset: bool = False, default: str = 'none'):
         """
@@ -309,12 +309,12 @@ class Environment(Extension):
                 return _str
             # We got a match
             # Group 0: Whole match; Group 1: Our placeholder; Group 2: The environment variable
-            placeholder, envvar = _match.group(1), _match.group(2)
+            placeholder, envvar, default = _match.group(1), _match.group(2), _match.group(4)
             envvalue = os.environ.get(envvar, None)
-            if envvalue is None and self.fail_on_unset:
+            if envvalue is None and default is None and self.fail_on_unset:
                 raise ExtensionError("Environment variable '{}' is unset.".format(envvar))
 
-            return _str.replace(placeholder, envvalue or self.default)
+            return _str.replace(placeholder, envvalue or default or self.default)
 
         _pattern = re.compile(self.__pattern__)
         node_key = process(_pattern, node_key)

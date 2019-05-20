@@ -7,6 +7,7 @@ statements:
   my_env: "{{env::MY_ENV}}"
   home: "{{env::HOME}}"
   unknown: "{{env::UNKNOWN}}"
+  with_default: "{{env::UNKNOWN:=the_default}}"
 """
 
 # Make sure that MY_ENV is set and that UNKNOWN is unset
@@ -19,4 +20,5 @@ pprint(result)
 # Result:
 # {'statements': {'home': '/home/pi',
 #                 'my_env': 'development',
-#                 'unknown': 'none'}}
+#                 'unknown': 'none'
+#                 'with_default': 'the_default'}}
