@@ -7,6 +7,7 @@ statements:
   my_env: "{{var::my_env}}"
   home: "{{var::home}}"
   unknown: "{{var::unknown}}"
+  combined: "{{var::my_env}}@{{var::home}}"
 """
 
 var_ext = ext.Variables(
@@ -19,6 +20,7 @@ from pprint import pprint
 pprint(result)
 
 # Result:
-# {'statements': {'home': '/home/pi',
+# {'statements': {'combined': 'development@/home/pi',
+#                 'home': '/home/pi',
 #                 'my_env': 'development',
 #                 'unknown': 'none'}}

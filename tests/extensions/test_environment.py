@@ -9,3 +9,11 @@ def test_environment_with_inline_default():
         res = DictMentor().bind(Environment()).load_yaml(jstr)
 
     assert res == {'a': 1, 'file_path': 'my_file.local.cfg'}
+
+
+def test_environment_with_multiple_patterns():
+    jstr = '{"a": 1, "file_path": "{{env::A}}-{{env::B}}-{{env::C}}"}'
+    with modified_environ(A='aval', B='bval', C='cval'):
+        res = DictMentor().bind(Environment()).load_yaml(jstr)
+
+    assert res == {'a': 1, 'file_path': 'aval-bval-cval'}

@@ -136,6 +136,23 @@ def eval_first_non_none(eval_list: Iterable[Callable[..., Any]], **kwargs: Any) 
     return None
 
 
+def multi_process(
+        process_fun: Callable[[Pattern[str], str], Any],
+        _pattern: Pattern[str],
+        initial_value: str
+) -> Any:
+    """Calls the process_fun over and over again with output of the last one being the
+    input of the next one until the output does not change anymore."""
+    res = initial_value
+    while True:
+        new_output = process_fun(_pattern, res)
+        if new_output == res:
+            # Nothing changed
+            break
+        res = new_output
+    return res
+
+
 class FileLocator:  # pylint: disable=too-few-public-methods
     """
     Based on a base_path, the given file path and a possible parent file path the locator

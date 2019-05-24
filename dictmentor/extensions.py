@@ -8,7 +8,7 @@ from typing import Any, Pattern, Union, cast, Optional, Dict
 import attr
 
 from .types import ExtensionConfig, AugmentedDict, YamlDocument, NodeKeyVal
-from .utils import FileLocator
+from .utils import FileLocator, multi_process
 from .validator import Validator
 
 
@@ -117,7 +117,7 @@ class ExternalResource(Extension):
         ... == {'a': 1, 'b': 2, 'sql': 'SELECT *\\nFROM my_table\\nWHERE 1 = 1\\n'})
         True
     """
-    __pattern__ = '.*({{external::(.*)}}).*'
+    __pattern__ = '.*({{external::(.*)}}).*?'
 
     def __init__(self, base_path: Optional[str] = None, locator: Optional[FileLocator] = None):
         """
@@ -270,7 +270,7 @@ class Environment(Extension):
         ...
         dictmentor.extensions.ExtensionError: Environment variable 'ENVIRONMENT' is unset.
     """
-    __pattern__ = '.*({{env::(.*?)(:=(.*))?}}).*'
+    __pattern__ = '.*({{env::(.*?)(:=(.*))?}}).*?'
 
     def __init__(self, fail_on_unset: bool = False, default: str = 'none'):
         """
@@ -317,8 +317,8 @@ class Environment(Extension):
             return _str.replace(placeholder, envvalue or default or self.default)
 
         _pattern = re.compile(self.__pattern__)
-        node_key = process(_pattern, node_key)
-        node_value = process(_pattern, node_value)
+        node_key = multi_process(process, _pattern, node_key)
+        node_value = multi_process(process, _pattern, node_value)
 
         return {node_key: node_value}
 
@@ -345,7 +345,7 @@ class Variables(Extension):
         ...
         dictmentor.extensions.ExtensionError: Variable 'environment' is unset.
     """
-    __pattern__ = '.*({{var::(.*)}}).*'
+    __pattern__ = '.*({{var::(.*)}}).*?'
 
     def __init__(self, fail_on_unset: bool = False, default: str = 'none', **_vars: Any):
         """
@@ -394,7 +394,7 @@ class Variables(Extension):
             return _str.replace(placeholder, varval or self.default)
 
         _pattern = re.compile(self.__pattern__)
-        node_key = process(_pattern, node_key)
-        node_value = process(_pattern, node_value)
+        node_key = multi_process(process, _pattern, node_key)
+        node_value = multi_process(process, _pattern, node_value)
 
         return {node_key: node_value}
