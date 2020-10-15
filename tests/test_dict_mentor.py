@@ -28,9 +28,11 @@ def test_init_extensions_with_non_iterable():
 
 def test_bind_non_extensions():
     dut = DictMentor()
-    with pytest.raises(ValueError) as ve:
+    with pytest.raises(
+        ValueError, 
+        match='Cannot bind extension due to missing interface requirements'
+    ):
         dut.bind("Not an extension")
-    assert 'Cannot bind extension due to missing interface requirements' in str(ve)
 
 
 def test_load_yaml_with_stream():
@@ -45,7 +47,8 @@ def test_load_yaml_with_stream():
 
 
 def test_load_yaml_invalid():
-    with pytest.raises(TypeError) as te:
+    with pytest.raises(
+        TypeError, 
+        match="Argument '_yaml' is whether a stream, nor a file, nor a string"
+    ):
         DictMentor().load_yaml(5)
-
-    assert "Argument '_yaml' is whether a stream, nor a file, nor a string" in str(te)
