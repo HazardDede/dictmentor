@@ -1,7 +1,7 @@
 """Contains core classes."""
 from typing import List, Iterable, cast, Optional, Any
 
-from ruamel import yaml
+from ruamel.yaml import YAML
 
 from .extensions import Extension, ExtensionContext
 from .types import YamlDocument, NonAugmentedDict, AugmentedDict
@@ -97,13 +97,15 @@ class DictMentor:
         Returns:
             Returns the yaml_ data as a python dictionary.
         """
+        _yaml_parser = YAML(typ="safe", pure=True)
+
         if Validator.is_stream(yaml_=_yaml):
-            return yaml.safe_load(_yaml)  # type: ignore
+            return _yaml_parser.load(_yaml)  # type: ignore
         if Validator.is_file(yaml_=_yaml):
             with open(_yaml) as fhandle:  # type: ignore
-                return yaml.safe_load(fhandle)  # type: ignore
+                return _yaml_parser.load(fhandle)
         if Validator.instance_of(target_type=str, yaml_=_yaml):
-            return yaml.safe_load(_yaml)  # type: ignore
+            return _yaml_parser.load(_yaml)  # type: ignore
 
         raise TypeError("Argument '_yaml' is whether a stream, nor a file, nor a string")
 
